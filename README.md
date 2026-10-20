@@ -2,14 +2,14 @@
 
 Приложение для работы с задачами на React, TypeScript, Material UI, NestJS и PostgreSQL. В нём реализованы создание, просмотр, редактирование и удаление задач, а также перемещение между колонками «Новая», «В работе» и «Готово». Данные сохраняются через REST API в PostgreSQL и остаются после перезагрузки страницы.
 
-Решение находится в ветке `feature/mini-kanban`. Ветка `main` оставлена пустой.
+Актуальная версия решения находится в ветке `main`. История разработки сохранена в `feature/mini-kanban`.
 
 ## Запуск
 
 Требуются Node.js 22.23.3, npm и Docker с Docker Compose. При использовании `nvm` версия Node берётся из `.nvmrc`.
 
 ```sh
-git clone --branch feature/mini-kanban https://github.com/karina-davydenko/mini-kanban.git
+git clone https://github.com/karina-davydenko/mini-kanban.git
 cd mini-kanban
 nvm install
 nvm use
