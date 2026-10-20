@@ -12,7 +12,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -49,6 +48,7 @@ const priorityLabels: Record<Priority, string> = {
 
 export function App() {
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const taskOpenerRef = useRef<HTMLButtonElement | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -110,10 +110,17 @@ export function App() {
     }
   }
 
-  function openTask(task: Task) {
+  function openTask(task: Task, opener: HTMLButtonElement) {
+    taskOpenerRef.current = opener;
+    opener.blur();
     setSelectedTaskId(task.id);
     setDialogMode('view');
     setActionError(false);
+  }
+
+  function closeTask() {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    setSelectedTaskId(null);
   }
 
   function startEditing(task: Task) {
@@ -168,7 +175,7 @@ export function App() {
       const response = await fetch(`${apiUrl}/tasks/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Could not delete task');
       setTasks((current) => current.filter((task) => task.id !== id));
-      setSelectedTaskId(null);
+      closeTask();
     } catch {
       setActionError(true);
     } finally {
@@ -193,7 +200,7 @@ export function App() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
-            inputProps={{ maxLength: 160 }}
+            slotProps={{ htmlInput: { maxLength: 160 } }}
             fullWidth
           />
           <TextField
@@ -202,20 +209,21 @@ export function App() {
             onChange={(event) => setDescription(event.target.value)}
             multiline
             minRows={2}
-            inputProps={{ maxLength: 4000 }}
+            slotProps={{ htmlInput: { maxLength: 4000 } }}
             fullWidth
           />
           <TextField
             select
+            slotProps={{ select: { native: true } }}
             label="Приоритет"
             value={priority}
             onChange={(event) => setPriority(event.target.value as Priority)}
             fullWidth
           >
             {Object.entries(priorityLabels).map(([value, label]) => (
-              <MenuItem key={value} value={value}>
+              <option key={value} value={value}>
                 {label}
-              </MenuItem>
+              </option>
             ))}
           </TextField>
           {saveError && (
@@ -281,16 +289,16 @@ export function App() {
                             {task.description}
                           </Typography>
                         )}
-                        <TextField select size="small" label={`Колонка задачи «${task.title}»`} value={task.status}
+                        <TextField select slotProps={{ select: { native: true } }} size="small" label={`Колонка задачи «${task.title}»`} value={task.status}
                           onChange={(event) => void updateTask(task.id, { status: event.target.value as Status })}
                           disabled={busyTaskId !== null} fullWidth sx={{ mt: 2 }}>
                           {columns.map((option) => (
-                            <MenuItem key={option.status} value={option.status}>{option.title}</MenuItem>
+                            <option key={option.status} value={option.status}>{option.title}</option>
                           ))}
                         </TextField>
                       </CardContent>
                       <CardActions>
-                        <Button size="small" onClick={() => openTask(task)}>Открыть</Button>
+                        <Button size="small" onClick={(event) => openTask(task, event.currentTarget)}>Открыть</Button>
                       </CardActions>
                     </Card>
                   ))}
@@ -302,7 +310,15 @@ export function App() {
         </>
       )}
 
-      <Dialog open={selectedTask !== null} onClose={() => busyTaskId === null && setSelectedTaskId(null)}
+      <Dialog open={selectedTask !== null} onClose={() => busyTaskId === null && closeTask()}
+        disableRestoreFocus
+        onTransitionExited={() => {
+          const opener = taskOpenerRef.current;
+          taskOpenerRef.current = null;
+          requestAnimationFrame(() => {
+            if (opener?.isConnected) opener.focus();
+          });
+        }}
         fullWidth maxWidth="sm">
         {selectedTask && (
           <>
@@ -315,20 +331,20 @@ export function App() {
                   <Stack spacing={2} sx={{ pt: 1 }}>
                     <TextField label="Название" value={editTitle}
                       onChange={(event) => setEditTitle(event.target.value)} required
-                      inputProps={{ maxLength: 160 }} fullWidth />
+                      slotProps={{ htmlInput: { maxLength: 160 } }} fullWidth />
                     <TextField label="Описание" value={editDescription}
                       onChange={(event) => setEditDescription(event.target.value)} multiline minRows={3}
-                      inputProps={{ maxLength: 4000 }} fullWidth />
-                    <TextField select label="Приоритет" value={editPriority}
+                      slotProps={{ htmlInput: { maxLength: 4000 } }} fullWidth />
+                    <TextField select slotProps={{ select: { native: true } }} label="Приоритет" value={editPriority}
                       onChange={(event) => setEditPriority(event.target.value as Priority)} fullWidth>
                       {Object.entries(priorityLabels).map(([value, label]) => (
-                        <MenuItem key={value} value={value}>{label}</MenuItem>
+                        <option key={value} value={value}>{label}</option>
                       ))}
                     </TextField>
-                    <TextField select label="Колонка" value={editStatus}
+                    <TextField select slotProps={{ select: { native: true } }} label="Колонка" value={editStatus}
                       onChange={(event) => setEditStatus(event.target.value as Status)} fullWidth>
                       {columns.map((option) => (
-                        <MenuItem key={option.status} value={option.status}>{option.title}</MenuItem>
+                        <option key={option.status} value={option.status}>{option.title}</option>
                       ))}
                     </TextField>
                     {actionError && <Alert severity="error">Не удалось сохранить изменения.</Alert>}
@@ -367,7 +383,7 @@ export function App() {
                 <DialogActions>
                   <Button color="error" onClick={() => { setActionError(false); setDialogMode('delete'); }}>Удалить</Button>
                   <Button onClick={() => startEditing(selectedTask)}>Редактировать</Button>
-                  <Button onClick={() => setSelectedTaskId(null)}>Закрыть</Button>
+                  <Button onClick={closeTask}>Закрыть</Button>
                 </DialogActions>
               </>
             )}
