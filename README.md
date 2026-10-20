@@ -25,6 +25,7 @@ docker compose ps
 
 ```sh
 npm run db:migrate
+npm run db:generate
 ```
 
 Backend и frontend запускаются в двух отдельных терминалах из корня проекта:

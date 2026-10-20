@@ -67,27 +67,30 @@ export function App() {
   const [editStatus, setEditStatus] = useState<Status>('new');
   const selectedTask = tasks.find((task) => task.id === selectedTaskId) ?? null;
 
-  async function loadTasks() {
+  async function loadTasks(signal?: AbortSignal) {
     setLoading(true);
     setLoadError(false);
     try {
-      const response = await fetch(`${apiUrl}/tasks`);
+      const response = await fetch(`${apiUrl}/tasks`, { signal });
       if (!response.ok) throw new Error('Could not load tasks');
-      setTasks((await response.json()) as Task[]);
+      const loadedTasks = (await response.json()) as Task[];
+      if (!signal?.aborted) setTasks(loadedTasks);
     } catch {
-      setLoadError(true);
+      if (!signal?.aborted) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }
 
   useEffect(() => {
-    void loadTasks();
+    const controller = new AbortController();
+    void loadTasks(controller.signal);
+    return () => controller.abort();
   }, []);
 
   async function createTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!title.trim() || saving) return;
+    if (!title.trim() || loading || saving) return;
 
     setSaving(true);
     setSaveError(false);
@@ -200,6 +203,7 @@ export function App() {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
+            disabled={saving}
             slotProps={{ htmlInput: { maxLength: 160 } }}
             fullWidth
           />
@@ -209,6 +213,7 @@ export function App() {
             onChange={(event) => setDescription(event.target.value)}
             multiline
             minRows={2}
+            disabled={saving}
             slotProps={{ htmlInput: { maxLength: 4000 } }}
             fullWidth
           />
@@ -218,6 +223,7 @@ export function App() {
             label="Приоритет"
             value={priority}
             onChange={(event) => setPriority(event.target.value as Priority)}
+            disabled={saving}
             fullWidth
           >
             {Object.entries(priorityLabels).map(([value, label]) => (
@@ -229,7 +235,7 @@ export function App() {
           {saveError && (
             <Alert severity="error">Не удалось сохранить задачу. Попробуйте ещё раз.</Alert>
           )}
-          <Button type="submit" variant="contained" disabled={saving || !title.trim()}>
+          <Button type="submit" variant="contained" disabled={loading || saving || !title.trim()}>
             {saving ? 'Сохраняем…' : 'Создать задачу'}
           </Button>
         </Stack>
@@ -244,7 +250,7 @@ export function App() {
           <Typography>Загружаем задачи…</Typography>
         </Stack>
       ) : loadError ? (
-        <Alert severity="error" action={<Button onClick={() => void loadTasks()}>Повторить</Button>}>
+        <Alert severity="error" action={<Button disabled={saving} onClick={() => void loadTasks()}>Повторить</Button>}>
           Не удалось загрузить задачи.
         </Alert>
       ) : (
