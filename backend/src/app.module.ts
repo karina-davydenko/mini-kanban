@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { join } from 'node:path';
 import { PrismaService } from './prisma.service';
+import { TasksController } from './tasks.controller';
+import { TasksService } from './tasks.service';
 
 @Module({
   imports: [
@@ -10,6 +12,7 @@ import { PrismaService } from './prisma.service';
       envFilePath: join(__dirname, '..', '.env'),
     }),
   ],
-  providers: [PrismaService],
+  controllers: [TasksController],
+  providers: [PrismaService, TasksService],
 })
 export class AppModule {}
