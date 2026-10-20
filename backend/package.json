@@ -6,6 +6,7 @@
     "start:dev": "nest start --watch",
     "prebuild": "prisma generate",
     "build": "nest build",
+    "test": "npm run build && node --test test/*.test.cjs",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
     "db:status": "prisma migrate status"

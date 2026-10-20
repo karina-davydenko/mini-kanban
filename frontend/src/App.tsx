@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Alert,
   Box,
@@ -48,6 +48,7 @@ const priorityLabels: Record<Priority, string> = {
 };
 
 export function App() {
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -188,6 +189,7 @@ export function App() {
         <Stack spacing={2} sx={{ maxWidth: 560 }}>
           <TextField
             label="Название"
+            inputRef={titleInputRef}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
@@ -238,7 +240,16 @@ export function App() {
           Не удалось загрузить задачи.
         </Alert>
       ) : (
-        <Box
+        <>
+          {tasks.length === 0 && (
+            <Stack spacing={1} alignItems="flex-start" sx={{ mb: 2 }}>
+              <Typography>Задач пока нет. Создайте первую задачу, чтобы начать.</Typography>
+              <Button variant="outlined" onClick={() => titleInputRef.current?.focus()}>
+                Добавить задачу
+              </Button>
+            </Stack>
+          )}
+          <Box
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
@@ -270,7 +281,7 @@ export function App() {
                             {task.description}
                           </Typography>
                         )}
-                        <TextField select size="small" label="Колонка" value={task.status}
+                        <TextField select size="small" label={`Колонка задачи «${task.title}»`} value={task.status}
                           onChange={(event) => void updateTask(task.id, { status: event.target.value as Status })}
                           disabled={busyTaskId !== null} fullWidth sx={{ mt: 2 }}>
                           {columns.map((option) => (
@@ -287,7 +298,8 @@ export function App() {
               </Box>
             );
           })}
-        </Box>
+          </Box>
+        </>
       )}
 
       <Dialog open={selectedTask !== null} onClose={() => busyTaskId === null && setSelectedTaskId(null)}
