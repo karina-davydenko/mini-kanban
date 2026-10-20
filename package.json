@@ -1,0 +1,15 @@
+{
+  "name": "mini-kanban",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "engines": {
+    "node": ">=22.12 <23"
+  },
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace frontend",
+    "dev:backend": "npm run start:dev --workspace backend",
+    "db:migrate": "npm run db:migrate --workspace backend",
+    "db:generate": "npm run db:generate --workspace backend",
+    "build": "npm run build --workspaces"
+  }
+}

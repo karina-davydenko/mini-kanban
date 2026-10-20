@@ -1,0 +1,12 @@
+node_modules/
+dist/
+frontend/dist/
+backend/dist/
+backend/src/generated/prisma/
+.env
+frontend/.env
+backend/.env
+.DS_Store
+coverage/
+*.tsbuildinfo
+WORKLOG.md
